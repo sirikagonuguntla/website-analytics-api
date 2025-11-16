@@ -4,22 +4,19 @@ A scalable backend API for collecting and analyzing website analytics events.
 
 ## 🚀 Live Demo
 
-**Deployment URL**: [Will be added after deployment]
-
+**Deployment URL**: [https://dashboard.render.com/web/srv-d4cvm63ipnbc739o6ohg]
 ## 📋 Features
 
 - ✅ API Key Management
 - ✅ Event Data Collection
 - ✅ Analytics Aggregation
 - ✅ Rate Limiting
-- ✅ Redis Caching
 - ✅ Docker Containerization
 
 ## 🛠️ Tech Stack
 
 - Node.js & Express
 - PostgreSQL
-- Redis
 - Docker
 
 ## 🚀 Quick Start
@@ -80,7 +77,6 @@ In VS Code left sidebar, you should now see:
 WEBSITE-ANALYTICS-API
   ├── config
   │   ├── database.js ✅
-  │   └── redis.js ✅
   ├── db
   │   └── schema.sql ✅
   ├── middleware
