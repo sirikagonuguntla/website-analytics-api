@@ -1,37 +1,56 @@
--- Create database schema for analytics API
+-- Website Analytics Database Schema
 
--- Apps/Websites table
+-- Apps table: Store registered applications
 CREATE TABLE IF NOT EXISTS apps (
-    app_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     app_name VARCHAR(255) NOT NULL,
     app_url VARCHAR(500) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    api_key_hash VARCHAR(64) NOT NULL UNIQUE,
+    api_key VARCHAR(255) UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_api_key_hash ON apps(api_key_hash);
-CREATE INDEX IF NOT EXISTS idx_email ON apps(email);
-
--- Analytics events table
-CREATE TABLE IF NOT EXISTS analytics_events (
-    event_id BIGSERIAL PRIMARY KEY,
-    app_id INTEGER NOT NULL REFERENCES apps(app_id) ON DELETE CASCADE,
-    event_name VARCHAR(255) NOT NULL,
-    url TEXT NOT NULL,
-    referrer TEXT,
+-- Events table: Store analytics events
+CREATE TABLE IF NOT EXISTS events (
+    id SERIAL PRIMARY KEY,
+    app_id INTEGER NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+    event VARCHAR(100) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    referrer VARCHAR(500),
+    user_agent TEXT,
     device VARCHAR(50),
-    ip_address INET,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    metadata JSONB
+    browser VARCHAR(50),
+    os VARCHAR(50),
+    country VARCHAR(100),
+    city VARCHAR(100),
+    custom_data JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_app_event ON analytics_events(app_id, event_name);
-CREATE INDEX IF NOT EXISTS idx_timestamp ON analytics_events(timestamp);
-CREATE INDEX IF NOT EXISTS idx_ip_address ON analytics_events(ip_address);
-CREATE INDEX IF NOT EXISTS idx_composite ON analytics_events(app_id, event_name, timestamp);
-CREATE INDEX IF NOT EXISTS idx_events_app_timestamp ON analytics_events(app_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_events_metadata ON analytics_events USING gin(metadata);
+-- Indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_apps_api_key ON apps(api_key);
+CREATE INDEX IF NOT EXISTS idx_apps_is_active ON apps(is_active);
+CREATE INDEX IF NOT EXISTS idx_events_app_id ON events(app_id);
+CREATE INDEX IF NOT EXISTS idx_events_event ON events(event);
+CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
+CREATE INDEX IF NOT EXISTS idx_events_url ON events(url);
+CREATE INDEX IF NOT EXISTS idx_events_device ON events(device);
+CREATE INDEX IF NOT EXISTS idx_events_browser ON events(browser);
+CREATE INDEX IF NOT EXISTS idx_events_app_id_created_at ON events(app_id, created_at);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger to auto-update updated_at
+CREATE TRIGGER update_apps_updated_at 
+    BEFORE UPDATE ON apps 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
